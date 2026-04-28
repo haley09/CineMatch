@@ -37,7 +37,7 @@ searchForm.addEventListener("submit", async (event) => {
       watchlistManager.watchedMovies
     );
 
-    displayResults(recommendationEngine.limitResults(filteredMovies, 10));
+    displayResults(recommendationEngine.limitResults(filteredMovies, 20));
   } catch (error) {
     console.error("Error fetching movies:", error);
     resultsContainer.innerHTML =
@@ -70,7 +70,7 @@ generateBtn.addEventListener("click", async () => {
       watchlistManager.watchedMovies
     );
 
-    const limitedMovies = recommendationEngine.limitResults(unwatchedMovies, 8);
+    const limitedMovies = recommendationEngine.limitResults(unwatchedMovies, 20);
 
     displayResults(limitedMovies);
   } catch (error) {
