@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CineMatch</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+</head>
+<body>
+
+  <header class="hero">
+    <h1>CineMatch</h1>
+    <p>Find what to watch without the endless scrolling.</p>
+  </header>
+
+  <main class="container">
+
+    <!-- QUIZ SECTION -->
+    <section class="quiz-section">
+      <h2>Find a Movie for Your Mood</h2>
+
+      <div class="quiz-grid">
+
+        <!-- Mood -->
+        <div class="field-group">
+          <label for="mood">Mood</label>
+          <select id="mood">
+            <option value="action">Excited</option>
+            <option value="comedy">Happy</option>
+            <option value="drama">Emotional</option>
+            <option value="horror">Adventurous</option>
+            <option value="romance">Romantic</option>
+            <option value="sci-fi">Curious</option>
+          </select>
+        </div>
+
+        <!-- Time -->
+        <div class="field-group">
+          <label for="time">Time Available</label>
+          <select id="time">
+            <option value="any">No Time Preference</option>
+            <option value="short">Under 90 min</option>
+            <option value="medium">90–120 min</option>
+            <option value="long">2+ hours</option>
+          </select>
+        </div>
+
+        <!-- Year Filter -->
+        <div class="field-group">
+          <label for="year">Release Year (optional)</label>
+          <input 
+            type="number" 
+            id="year" 
+            placeholder="e.g. 2015"
+            min="1900"
+            max="2026"
+          />
+        </div>
+
+      </div>
+
+      <button id="generateBtn" class="primary-btn">
+        Get Recommendations
+      </button>
+    </section>
+
+    <!-- SEARCH SECTION -->
+    <section class="search-section">
+      <h2>Or Search for a Movie</h2>
+      <form id="searchForm">
+        <input 
+          type="text" 
+          id="searchInput" 
+          placeholder="Search movies..." 
+          required 
+        />
+        <button type="submit">Search</button>
+      </form>
+    </section>
+
+    <!-- RESULTS -->
+    <section class="results-section">
+      <div class="section-header">
+        <h2>Results</h2>
+        <p id="resultsMessage" class="helper-text">
+          Use the quiz or search to get started.
+        </p>
+      </div>
+
+      <div id="results" class="movie-grid"></div>
+    </section>
+
+    <!-- WATCHED -->
+    <section class="watchlist-section">
+      <div class="section-header">
+        <h2>Watched</h2>
+        <p class="helper-text">
+          Movies you’ve already marked as watched.
+        </p>
+      </div>
+
+      <div id="watchedList" class="movie-grid"></div>
+    </section>
+
+  </main>
+
+  <!-- MODAL -->
+  <div id="movieModal" class="modal hidden">
+    <div class="modal-content">
+      <span id="closeModal">&times;</span>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    This product uses the TMDB API but is not endorsed or certified by TMDB.
+  </footer>
+
+  <!-- SCRIPTS -->
+  <script src="Movie.js"></script>
+  <script src="WatchlistManager.js"></script>
+  <script src="RecommendationEngine.js"></script>
+  <script src="app.js"></script>
+
+</body>
+</html>
