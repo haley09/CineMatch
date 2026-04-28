@@ -16,13 +16,10 @@
 
   <main class="container">
 
-    <!-- QUIZ SECTION -->
     <section class="quiz-section">
       <h2>Find a Movie for Your Mood</h2>
 
       <div class="quiz-grid">
-
-        <!-- Mood -->
         <div class="field-group">
           <label for="mood">Mood</label>
           <select id="mood">
@@ -35,7 +32,6 @@
           </select>
         </div>
 
-        <!-- Time -->
         <div class="field-group">
           <label for="time">Time Available</label>
           <select id="time">
@@ -46,7 +42,6 @@
           </select>
         </div>
 
-        <!-- Year Filter -->
         <div class="field-group">
           <label for="year">Release Year (optional)</label>
           <input 
@@ -57,15 +52,11 @@
             max="2026"
           />
         </div>
-
       </div>
 
-      <button id="generateBtn" class="primary-btn">
-        Get Recommendations
-      </button>
+      <button id="generateBtn" class="primary-btn">Get Recommendations</button>
     </section>
 
-    <!-- SEARCH SECTION -->
     <section class="search-section">
       <h2>Or Search for a Movie</h2>
       <form id="searchForm">
@@ -79,7 +70,6 @@
       </form>
     </section>
 
-    <!-- RESULTS -->
     <section class="results-section">
       <div class="section-header">
         <h2>Results</h2>
@@ -89,9 +79,12 @@
       </div>
 
       <div id="results" class="movie-grid"></div>
+
+      <button id="loadMoreBtn" class="primary-btn hidden">
+        Load More
+      </button>
     </section>
 
-    <!-- WATCHED -->
     <section class="watchlist-section">
       <div class="section-header">
         <h2>Watched</h2>
@@ -105,7 +98,6 @@
 
   </main>
 
-  <!-- MODAL -->
   <div id="movieModal" class="modal hidden">
     <div class="modal-content">
       <span id="closeModal">&times;</span>
@@ -113,12 +105,10 @@
     </div>
   </div>
 
-  <!-- FOOTER -->
   <footer class="footer">
     This product uses the TMDB API but is not endorsed or certified by TMDB.
   </footer>
 
-  <!-- SCRIPTS -->
   <script src="Movie.js"></script>
   <script src="WatchlistManager.js"></script>
   <script src="RecommendationEngine.js"></script>

@@ -3,10 +3,10 @@ class Movie {
     this.id = data.id;
     this.title = data.title;
     this.overview = data.overview || "";
-    this.posterPath = data.poster_path;
-    this.releaseDate = data.release_date || "";
-    this.rating = data.vote_average || 0;
-    this.genreIds = data.genre_ids || [];
+    this.posterPath = data.poster_path || data.posterPath || "";
+    this.releaseDate = data.release_date || data.releaseDate || "";
+    this.rating = data.vote_average || data.rating || 0;
+    this.genreIds = data.genre_ids || data.genreIds || [];
   }
 
   getYear() {

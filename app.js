@@ -13,11 +13,17 @@ const moodSelect = document.getElementById("mood");
 const timeSelect = document.getElementById("time");
 const yearInput = document.getElementById("year");
 const resultsMessage = document.getElementById("resultsMessage");
+const loadMoreBtn = document.getElementById("loadMoreBtn");
 
 // Modal elements
 const modal = document.getElementById("movieModal");
 const modalBody = document.getElementById("modalBody");
 const closeModal = document.getElementById("closeModal");
+
+// Load more state
+let currentMovies = [];
+let visibleCount = 8;
+const moviesPerLoad = 8;
 
 // SEARCH
 searchForm.addEventListener("submit", async (event) => {
@@ -28,16 +34,18 @@ searchForm.addEventListener("submit", async (event) => {
 
   resultsMessage.textContent = `Showing search results for "${query}".`;
   resultsContainer.innerHTML = "<p>Loading movies...</p>";
+  loadMoreBtn.classList.add("hidden");
 
   try {
     const movies = await recommendationEngine.fetchMovies(query);
 
-    const filteredMovies = recommendationEngine.removeWatched(
+    currentMovies = recommendationEngine.removeWatched(
       movies,
       watchlistManager.watchedMovies
     );
 
-    displayResults(recommendationEngine.limitResults(filteredMovies, 20));
+    visibleCount = moviesPerLoad;
+    displayCurrentMovies();
   } catch (error) {
     console.error("Error fetching movies:", error);
     resultsContainer.innerHTML =
@@ -58,6 +66,7 @@ generateBtn.addEventListener("click", async () => {
 
   resultsMessage.textContent = `Showing recommendations for a ${mood} mood with ${timeText}${yearText}.`;
   resultsContainer.innerHTML = "<p>Generating recommendations...</p>";
+  loadMoreBtn.classList.add("hidden");
 
   try {
     const movies = await recommendationEngine.fetchMovies(mood);
@@ -65,19 +74,24 @@ generateBtn.addEventListener("click", async () => {
     const timeFiltered = filterByTime(movies, timePreference);
     const yearFiltered = filterByYear(timeFiltered, year);
 
-    const unwatchedMovies = recommendationEngine.removeWatched(
+    currentMovies = recommendationEngine.removeWatched(
       yearFiltered,
       watchlistManager.watchedMovies
     );
 
-    const limitedMovies = recommendationEngine.limitResults(unwatchedMovies, 20);
-
-    displayResults(limitedMovies);
+    visibleCount = moviesPerLoad;
+    displayCurrentMovies();
   } catch (error) {
     console.error("Error generating recommendations:", error);
     resultsContainer.innerHTML =
       '<p class="empty-state">Failed to generate recommendations.</p>';
   }
+});
+
+// LOAD MORE
+loadMoreBtn.addEventListener("click", () => {
+  visibleCount += moviesPerLoad;
+  displayCurrentMovies();
 });
 
 // FILTER BY TIME
@@ -117,6 +131,18 @@ function filterByYear(movies, year) {
   });
 }
 
+// DISPLAY CURRENT MOVIES WITH LOAD MORE
+function displayCurrentMovies() {
+  const moviesToShow = currentMovies.slice(0, visibleCount);
+  displayResults(moviesToShow);
+
+  if (visibleCount < currentMovies.length) {
+    loadMoreBtn.classList.remove("hidden");
+  } else {
+    loadMoreBtn.classList.add("hidden");
+  }
+}
+
 // DISPLAY RESULTS
 function displayResults(movies) {
   resultsContainer.innerHTML = "";
@@ -124,6 +150,7 @@ function displayResults(movies) {
   if (movies.length === 0) {
     resultsContainer.innerHTML =
       '<p class="empty-state">No movies found. Try a different mood, year, or time option.</p>';
+    loadMoreBtn.classList.add("hidden");
     return;
   }
 
@@ -165,7 +192,7 @@ function createMovieCard(movie, showAddButton) {
   card.classList.add("movie-card");
 
   card.innerHTML = `
-    <img src="${movie.getPosterUrl()}" />
+    <img src="${movie.getPosterUrl()}" alt="${movie.title} poster" />
     <h3>${movie.title}</h3>
     <p><strong>Year:</strong> ${movie.getYear()}</p>
     <p><strong>Rating:</strong> ${
@@ -197,6 +224,9 @@ function createMovieCard(movie, showAddButton) {
 
       watchlistManager.addMovie(movie);
       displayWatchedList();
+
+      currentMovies = currentMovies.filter((savedMovie) => savedMovie.id !== movie.id);
+      displayCurrentMovies();
 
       addButton.textContent = "Already Watched";
       addButton.disabled = true;
