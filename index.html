@@ -15,6 +15,66 @@
   </header>
 
   <main class="container">
+    <section class="account-section">
+      <div class="section-header account-header">
+        <div>
+          <h2>Member Dashboard</h2>
+          <p id="authMessage" class="helper-text">
+            Create an account or sign in to save your watched movies.
+          </p>
+        </div>
+        <button id="logoutBtn" class="secondary-btn hidden" type="button">Log Out</button>
+      </div>
+
+      <div id="authPanels" class="auth-grid">
+        <form id="loginForm" class="auth-card">
+          <h3>Login</h3>
+          <label for="loginEmail">Email</label>
+          <input type="email" id="loginEmail" placeholder="you@example.com" required />
+
+          <label for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" placeholder="Password" required />
+
+          <button type="submit">Login</button>
+        </form>
+
+        <form id="registerForm" class="auth-card">
+          <h3>Register</h3>
+          <label for="registerName">Name</label>
+          <input type="text" id="registerName" placeholder="Your name" required />
+
+          <label for="registerEmail">Email</label>
+          <input type="email" id="registerEmail" placeholder="you@example.com" required />
+
+          <label for="registerPassword">Password</label>
+          <input
+            type="password"
+            id="registerPassword"
+            placeholder="At least 6 characters"
+            minlength="6"
+            required
+          />
+
+          <button type="submit">Create Account</button>
+        </form>
+      </div>
+
+      <div id="profileDashboard" class="profile-dashboard hidden">
+        <div class="profile-card">
+          <span class="profile-label">Signed in as</span>
+          <h3 id="profileName">Movie Fan</h3>
+          <p id="profileEmail" class="helper-text"></p>
+        </div>
+        <div class="stat-card">
+          <span id="watchedCount">0</span>
+          <p>Watched Movies</p>
+        </div>
+        <div class="stat-card">
+          <span id="recommendationCount">0</span>
+          <p>Current Results</p>
+        </div>
+      </div>
+    </section>
 
     <section class="quiz-section">
       <h2>Find a Movie for Your Mood</h2>
@@ -37,7 +97,7 @@
           <select id="time">
             <option value="any">No Time Preference</option>
             <option value="short">Under 90 min</option>
-            <option value="medium">90–120 min</option>
+            <option value="medium">90&ndash;120 min</option>
             <option value="long">2+ hours</option>
           </select>
         </div>
@@ -89,7 +149,7 @@
       <div class="section-header">
         <h2>Watched</h2>
         <p class="helper-text">
-          Movies you’ve already marked as watched.
+          Movies you&rsquo;ve already marked as watched.
         </p>
       </div>
 
@@ -110,6 +170,7 @@
   </footer>
 
   <script src="Movie.js"></script>
+  <script src="AuthManager.js"></script>
   <script src="WatchlistManager.js"></script>
   <script src="RecommendationEngine.js"></script>
   <script src="app.js"></script>

@@ -35,7 +35,8 @@ body {
 .quiz-section,
 .search-section,
 .results-section,
-.watchlist-section {
+.watchlist-section,
+.account-section {
   margin-bottom: 2rem;
   background: #1f2937;
   padding: 1.25rem;
@@ -93,8 +94,69 @@ button:hover {
   background: #be123c;
 }
 
+.secondary-btn {
+  background: #374151;
+}
+
+.secondary-btn:hover {
+  background: #4b5563;
+}
+
 .primary-btn {
   margin-top: 0.25rem;
+}
+
+.account-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.auth-grid,
+.profile-dashboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.auth-card,
+.profile-card,
+.stat-card {
+  background: #111827;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.auth-card {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.auth-card h3,
+.profile-card h3,
+.stat-card p {
+  margin: 0;
+}
+
+.profile-label {
+  color: #94a3b8;
+  display: block;
+  font-size: 0.85rem;
+  margin-bottom: 0.35rem;
+}
+
+.stat-card span {
+  color: #fb7185;
+  display: block;
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 0.25rem;
+}
+
+.stat-card p {
+  color: #cbd5e1;
 }
 
 .section-header {
@@ -142,8 +204,14 @@ button:hover {
   margin: 0.35rem 0;
   color: #d1d5db;
   font-size: 0.95rem;
-  transform: scale(1.03);
+}
+
+.movie-card {
   transition: transform 0.2s ease;
+}
+
+.movie-card:hover {
+  transform: translateY(-3px);
 }
 
 .card-buttons {

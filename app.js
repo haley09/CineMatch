@@ -1,6 +1,7 @@
 const API_KEY = "52e8c260be43feecca1a8cef0a780148";
 
 const recommendationEngine = new RecommendationEngine(API_KEY);
+const authManager = new AuthManager();
 const watchlistManager = new WatchlistManager();
 
 // Elements
@@ -14,6 +15,16 @@ const timeSelect = document.getElementById("time");
 const yearInput = document.getElementById("year");
 const resultsMessage = document.getElementById("resultsMessage");
 const loadMoreBtn = document.getElementById("loadMoreBtn");
+const loginForm = document.getElementById("loginForm");
+const registerForm = document.getElementById("registerForm");
+const logoutBtn = document.getElementById("logoutBtn");
+const authPanels = document.getElementById("authPanels");
+const authMessage = document.getElementById("authMessage");
+const profileDashboard = document.getElementById("profileDashboard");
+const profileName = document.getElementById("profileName");
+const profileEmail = document.getElementById("profileEmail");
+const watchedCount = document.getElementById("watchedCount");
+const recommendationCount = document.getElementById("recommendationCount");
 
 // Modal elements
 const modal = document.getElementById("movieModal");
@@ -24,6 +35,71 @@ const closeModal = document.getElementById("closeModal");
 let currentMovies = [];
 let visibleCount = 8;
 const moviesPerLoad = 8;
+
+// AUTH
+loginForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+
+  try {
+    authManager.login(
+      document.getElementById("loginEmail").value,
+      document.getElementById("loginPassword").value
+    );
+    loginForm.reset();
+    syncAccountState("Welcome back.");
+  } catch (error) {
+    authMessage.textContent = error.message;
+  }
+});
+
+registerForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+
+  try {
+    authManager.register(
+      document.getElementById("registerName").value,
+      document.getElementById("registerEmail").value,
+      document.getElementById("registerPassword").value
+    );
+    registerForm.reset();
+    syncAccountState("Account created. Your watched list is ready.");
+  } catch (error) {
+    authMessage.textContent = error.message;
+  }
+});
+
+logoutBtn.addEventListener("click", () => {
+  authManager.logout();
+  currentMovies = [];
+  visibleCount = moviesPerLoad;
+  resultsContainer.innerHTML = "";
+  resultsMessage.textContent = "Use the quiz or search to get started.";
+  syncAccountState("Create an account or sign in to save your watched movies.");
+});
+
+function syncAccountState(message) {
+  const user = authManager.currentUser;
+  const storageKey = user ? `watchedMovies:${user.id}` : "watchedMovies:guest";
+
+  watchlistManager.setStorageKey(storageKey);
+  authMessage.textContent =
+    message ||
+    (user
+      ? "Your profile is active and your watched list is saved."
+      : "Create an account or sign in to save your watched movies.");
+
+  authPanels.classList.toggle("hidden", Boolean(user));
+  profileDashboard.classList.toggle("hidden", !user);
+  logoutBtn.classList.toggle("hidden", !user);
+
+  if (user) {
+    profileName.textContent = user.name;
+    profileEmail.textContent = user.email;
+  }
+
+  displayWatchedList();
+  updateDashboardStats();
+}
 
 // SEARCH
 searchForm.addEventListener("submit", async (event) => {
@@ -135,6 +211,7 @@ function filterByYear(movies, year) {
 function displayCurrentMovies() {
   const moviesToShow = currentMovies.slice(0, visibleCount);
   displayResults(moviesToShow);
+  updateDashboardStats();
 
   if (visibleCount < currentMovies.length) {
     loadMoreBtn.classList.remove("hidden");
@@ -173,6 +250,14 @@ function displayResults(movies) {
 function displayWatchedList() {
   watchedListContainer.innerHTML = "";
 
+  updateDashboardStats();
+
+  if (!authManager.currentUser) {
+    watchedListContainer.innerHTML =
+      '<p class="empty-state">Sign in to save and view watched movies.</p>';
+    return;
+  }
+
   if (watchlistManager.watchedMovies.length === 0) {
     watchedListContainer.innerHTML =
       '<p class="empty-state">No watched movies yet.</p>';
@@ -191,30 +276,45 @@ function createMovieCard(movie, showAddButton) {
   const card = document.createElement("div");
   card.classList.add("movie-card");
 
-  card.innerHTML = `
-    <img src="${movie.getPosterUrl()}" alt="${movie.title} poster" />
-    <h3>${movie.title}</h3>
-    <p><strong>Year:</strong> ${movie.getYear()}</p>
-    <p><strong>Rating:</strong> ${
-      movie.rating ? movie.rating.toFixed(1) : "N/A"
-    }</p>
-    <p>${movie.getShortOverview()}</p>
-    <div class="card-buttons"></div>
-  `;
+  const poster = document.createElement("img");
+  poster.src = movie.getPosterUrl();
+  poster.alt = `${movie.title} poster`;
+
+  const title = document.createElement("h3");
+  title.textContent = movie.title;
+
+  const year = document.createElement("p");
+  year.append(createStrongLabel("Year:"), ` ${movie.getYear()}`);
+
+  const rating = document.createElement("p");
+  rating.append(
+    createStrongLabel("Rating:"),
+    ` ${movie.rating ? movie.rating.toFixed(1) : "N/A"}`
+  );
+
+  const overview = document.createElement("p");
+  overview.textContent = movie.getShortOverview();
+
+  const buttonContainer = document.createElement("div");
+  buttonContainer.classList.add("card-buttons");
+
+  card.append(poster, title, year, rating, overview, buttonContainer);
 
   card.addEventListener("click", () => {
     openModal(movie);
   });
 
-  const buttonContainer = card.querySelector(".card-buttons");
-
   if (showAddButton) {
     const addButton = document.createElement("button");
     const isWatched = watchlistManager.hasMovie(movie.id);
 
-    addButton.textContent = isWatched ? "Already Watched" : "Mark Watched";
+    addButton.textContent = authManager.currentUser
+      ? isWatched
+        ? "Already Watched"
+        : "Mark Watched"
+      : "Login to Save";
 
-    if (isWatched) {
+    if (isWatched || !authManager.currentUser) {
       addButton.disabled = true;
       addButton.style.opacity = "0.7";
     }
@@ -224,6 +324,7 @@ function createMovieCard(movie, showAddButton) {
 
       watchlistManager.addMovie(movie);
       displayWatchedList();
+      updateDashboardStats();
 
       currentMovies = currentMovies.filter((savedMovie) => savedMovie.id !== movie.id);
       displayCurrentMovies();
@@ -251,18 +352,46 @@ function createMovieCard(movie, showAddButton) {
   return card;
 }
 
+function createStrongLabel(text) {
+  const label = document.createElement("strong");
+  label.textContent = text;
+  return label;
+}
+
+function updateDashboardStats() {
+  watchedCount.textContent = authManager.currentUser
+    ? watchlistManager.watchedMovies.length
+    : "0";
+  recommendationCount.textContent = currentMovies.length;
+}
+
 // MODAL
 async function openModal(movie) {
-  modalBody.innerHTML = `
-    <h2>${movie.title}</h2>
-    <img src="${movie.getPosterUrl()}" style="width:100%; border-radius:8px;" />
-    <p><strong>Year:</strong> ${movie.getYear()}</p>
-    <p><strong>Rating:</strong> ${
-      movie.rating ? movie.rating.toFixed(1) : "N/A"
-    }</p>
-    <p>${movie.overview || "No description available."}</p>
-    <p>Loading trailer...</p>
-  `;
+  modalBody.textContent = "";
+
+  const title = document.createElement("h2");
+  title.textContent = movie.title;
+
+  const poster = document.createElement("img");
+  poster.src = movie.getPosterUrl();
+  poster.alt = `${movie.title} poster`;
+
+  const year = document.createElement("p");
+  year.append(createStrongLabel("Year:"), ` ${movie.getYear()}`);
+
+  const rating = document.createElement("p");
+  rating.append(
+    createStrongLabel("Rating:"),
+    ` ${movie.rating ? movie.rating.toFixed(1) : "N/A"}`
+  );
+
+  const overview = document.createElement("p");
+  overview.textContent = movie.overview || "No description available.";
+
+  const trailerMessage = document.createElement("p");
+  trailerMessage.textContent = "Loading trailer...";
+
+  modalBody.append(title, poster, year, rating, overview, trailerMessage);
 
   modal.classList.remove("hidden");
 
@@ -287,17 +416,23 @@ async function openModal(movie) {
       ) || data.results.find((v) => v.site === "YouTube");
 
     if (trailer) {
-      modalBody.innerHTML += `
-        <iframe width="100%" height="315"
-        src="https://www.youtube.com/embed/${trailer.key}"
-        frameborder="0" allowfullscreen></iframe>
-      `;
+      trailerMessage.remove();
+
+      const trailerFrame = document.createElement("iframe");
+      trailerFrame.width = "100%";
+      trailerFrame.height = "315";
+      trailerFrame.src = `https://www.youtube.com/embed/${encodeURIComponent(
+        trailer.key
+      )}`;
+      trailerFrame.title = `${movie.title} trailer`;
+      trailerFrame.allowFullscreen = true;
+      modalBody.appendChild(trailerFrame);
     } else {
-      modalBody.innerHTML += `<p>No trailer available.</p>`;
+      trailerMessage.textContent = "No trailer available.";
     }
   } catch (error) {
     console.error(error);
-    modalBody.innerHTML += `<p>Could not load trailer.</p>`;
+    trailerMessage.textContent = "Could not load trailer.";
   }
 }
 
@@ -313,4 +448,4 @@ window.addEventListener("click", (e) => {
 });
 
 // INIT
-displayWatchedList();
+syncAccountState();

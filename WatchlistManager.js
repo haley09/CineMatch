@@ -1,5 +1,11 @@
 class WatchlistManager {
-  constructor() {
+  constructor(storageKey = "watchedMovies") {
+    this.storageKey = storageKey;
+    this.watchedMovies = this.loadFromLocalStorage();
+  }
+
+  setStorageKey(storageKey) {
+    this.storageKey = storageKey;
     this.watchedMovies = this.loadFromLocalStorage();
   }
 
@@ -26,10 +32,16 @@ class WatchlistManager {
   }
 
   saveToLocalStorage() {
-    localStorage.setItem("watchedMovies", JSON.stringify(this.watchedMovies));
+    localStorage.setItem(this.storageKey, JSON.stringify(this.watchedMovies));
   }
 
   loadFromLocalStorage() {
-    return JSON.parse(localStorage.getItem("watchedMovies")) || [];
+    try {
+      const savedMovies = JSON.parse(localStorage.getItem(this.storageKey));
+      return Array.isArray(savedMovies) ? savedMovies : [];
+    } catch (error) {
+      console.warn("Could not load watched movies from localStorage.", error);
+      return [];
+    }
   }
 }
