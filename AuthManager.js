@@ -1,76 +1,81 @@
 class AuthManager {
   constructor() {
-    this.usersKey = "cineMatchUsers";
-    this.sessionKey = "cineMatchCurrentUser";
-    this.users = this.loadUsers();
-    this.currentUser = this.loadCurrentUser();
+    this.tokenKey = "cineMatchToken";
+    this.token = localStorage.getItem(this.tokenKey);
+    this.currentUser = null;
   }
 
-  register(name, email, password) {
-    const normalizedEmail = email.trim().toLowerCase();
+  async register(name, email, password) {
+    const data = await this.request("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify({
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        password
+      })
+    });
 
-    if (this.users.some((user) => user.email === normalizedEmail)) {
-      throw new Error("An account with that email already exists.");
-    }
-
-    const user = {
-      id:
-        typeof crypto !== "undefined" && crypto.randomUUID
-          ? crypto.randomUUID()
-          : String(Date.now()),
-      name: name.trim(),
-      email: normalizedEmail,
-      password,
-      createdAt: new Date().toISOString()
-    };
-
-    this.users.push(user);
-    this.saveUsers();
-    this.setCurrentUser(user);
-    return user;
+    this.setSession(data);
+    return data.user;
   }
 
-  login(email, password) {
-    const normalizedEmail = email.trim().toLowerCase();
-    const user = this.users.find(
-      (savedUser) =>
-        savedUser.email === normalizedEmail && savedUser.password === password
-    );
+  async login(email, password) {
+    const data = await this.request("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({
+        email: email.trim().toLowerCase(),
+        password
+      })
+    });
 
-    if (!user) {
-      throw new Error("Email or password is incorrect.");
-    }
-
-    this.setCurrentUser(user);
-    return user;
+    this.setSession(data);
+    return data.user;
   }
 
   logout() {
     this.currentUser = null;
-    localStorage.removeItem(this.sessionKey);
+    this.token = null;
+    localStorage.removeItem(this.tokenKey);
   }
 
-  setCurrentUser(user) {
-    this.currentUser = user;
-    localStorage.setItem(this.sessionKey, user.id);
-  }
-
-  loadCurrentUser() {
-    const userId = localStorage.getItem(this.sessionKey);
-    return this.users.find((user) => user.id === userId) || null;
-  }
-
-  saveUsers() {
-    localStorage.setItem(this.usersKey, JSON.stringify(this.users));
-  }
-
-  loadUsers() {
-    try {
-      const savedUsers = JSON.parse(localStorage.getItem(this.usersKey));
-      return Array.isArray(savedUsers) ? savedUsers : [];
-    } catch (error) {
-      console.warn("Could not load CineMatch users from localStorage.", error);
-      return [];
+  async loadCurrentUser() {
+    if (!this.token) {
+      this.currentUser = null;
+      return null;
     }
+
+    try {
+      const data = await this.request("/api/auth/me");
+      this.currentUser = data.user;
+      return this.currentUser;
+    } catch (error) {
+      this.logout();
+      return null;
+    }
+  }
+
+  setSession(data) {
+    this.token = data.token;
+    this.currentUser = data.user;
+    localStorage.setItem(this.tokenKey, data.token);
+  }
+
+  async request(path, options = {}) {
+    const response = await fetch(path, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
+        ...(options.headers || {})
+      }
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data.error || "Something went wrong.");
+    }
+
+    return data;
   }
 }

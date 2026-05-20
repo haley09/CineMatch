@@ -1,8 +1,7 @@
 # TODO - CineMatch
 
 ## Auth
-- Clearly note in the README that login/register is localStorage demo auth.
-- Consider adding a backend later for real accounts, hashed passwords, and protected user data.
+- Add password reset or account recovery.
 - Add profile editing for name and email.
 
 ## API
@@ -22,6 +21,5 @@
 
 ## Testing
 - Test account switching to confirm watched lists stay separate.
-- Test corrupted localStorage data and empty TMDB responses.
+- Test expired JWT sessions and database connection failures.
 - Test the app with the network offline or TMDB unavailable.
-

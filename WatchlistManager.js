@@ -1,47 +1,59 @@
 class WatchlistManager {
-  constructor(storageKey = "watchedMovies") {
-    this.storageKey = storageKey;
-    this.watchedMovies = this.loadFromLocalStorage();
+  constructor(authManager) {
+    this.authManager = authManager;
+    this.watchedMovies = [];
   }
 
-  setStorageKey(storageKey) {
-    this.storageKey = storageKey;
-    this.watchedMovies = this.loadFromLocalStorage();
-  }
-
-  addMovie(movie) {
-    const alreadyExists = this.watchedMovies.some(
-      (savedMovie) => savedMovie.id === movie.id
-    );
-
-    if (!alreadyExists) {
-      this.watchedMovies.push(movie);
-      this.saveToLocalStorage();
+  async loadMovies() {
+    if (!this.authManager.currentUser) {
+      this.watchedMovies = [];
+      return this.watchedMovies;
     }
+
+    const data = await this.authManager.request("/api/watchlist");
+    this.watchedMovies = data.movies;
+    return this.watchedMovies;
   }
 
-  removeMovie(movieId) {
-    this.watchedMovies = this.watchedMovies.filter(
-      (movie) => movie.id !== movieId
-    );
-    this.saveToLocalStorage();
+  async addMovie(movie) {
+    if (!this.authManager.currentUser) {
+      throw new Error("Sign in to save watched movies.");
+    }
+
+    const movieData = this.toMovieData(movie);
+    const data = await this.authManager.request("/api/watchlist", {
+      method: "POST",
+      body: JSON.stringify({ movie: movieData })
+    });
+
+    this.watchedMovies = data.movies;
+  }
+
+  async removeMovie(movieId) {
+    if (!this.authManager.currentUser) {
+      return;
+    }
+
+    const data = await this.authManager.request(`/api/watchlist/${movieId}`, {
+      method: "DELETE"
+    });
+
+    this.watchedMovies = data.movies;
   }
 
   hasMovie(movieId) {
     return this.watchedMovies.some((movie) => movie.id === movieId);
   }
 
-  saveToLocalStorage() {
-    localStorage.setItem(this.storageKey, JSON.stringify(this.watchedMovies));
-  }
-
-  loadFromLocalStorage() {
-    try {
-      const savedMovies = JSON.parse(localStorage.getItem(this.storageKey));
-      return Array.isArray(savedMovies) ? savedMovies : [];
-    } catch (error) {
-      console.warn("Could not load watched movies from localStorage.", error);
-      return [];
-    }
+  toMovieData(movie) {
+    return {
+      id: movie.id,
+      title: movie.title,
+      overview: movie.overview,
+      posterPath: movie.posterPath,
+      releaseDate: movie.releaseDate,
+      rating: movie.rating,
+      genreIds: movie.genreIds
+    };
   }
 }

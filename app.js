@@ -2,7 +2,7 @@ const API_KEY = "52e8c260be43feecca1a8cef0a780148";
 
 const recommendationEngine = new RecommendationEngine(API_KEY);
 const authManager = new AuthManager();
-const watchlistManager = new WatchlistManager();
+const watchlistManager = new WatchlistManager(authManager);
 
 // Elements
 const searchForm = document.getElementById("searchForm");
@@ -37,51 +37,49 @@ let visibleCount = 8;
 const moviesPerLoad = 8;
 
 // AUTH
-loginForm.addEventListener("submit", (event) => {
+loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
   try {
-    authManager.login(
+    await authManager.login(
       document.getElementById("loginEmail").value,
       document.getElementById("loginPassword").value
     );
     loginForm.reset();
-    syncAccountState("Welcome back.");
+    await syncAccountState("Welcome back.");
   } catch (error) {
     authMessage.textContent = error.message;
   }
 });
 
-registerForm.addEventListener("submit", (event) => {
+registerForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
   try {
-    authManager.register(
+    await authManager.register(
       document.getElementById("registerName").value,
       document.getElementById("registerEmail").value,
       document.getElementById("registerPassword").value
     );
     registerForm.reset();
-    syncAccountState("Account created. Your watched list is ready.");
+    await syncAccountState("Account created. Your watched list is ready.");
   } catch (error) {
     authMessage.textContent = error.message;
   }
 });
 
-logoutBtn.addEventListener("click", () => {
+logoutBtn.addEventListener("click", async () => {
   authManager.logout();
   currentMovies = [];
   visibleCount = moviesPerLoad;
   resultsContainer.innerHTML = "";
   resultsMessage.textContent = "Use the quiz or search to get started.";
-  syncAccountState("Create an account or sign in to save your watched movies.");
+  await syncAccountState("Create an account or sign in to save your watched movies.");
 });
 
-function syncAccountState(message) {
+async function syncAccountState(message) {
   const user = authManager.currentUser;
-  const storageKey = user ? `watchedMovies:${user.id}` : "watchedMovies:guest";
 
-  watchlistManager.setStorageKey(storageKey);
   authMessage.textContent =
     message ||
     (user
@@ -95,6 +93,12 @@ function syncAccountState(message) {
   if (user) {
     profileName.textContent = user.name;
     profileEmail.textContent = user.email;
+  }
+
+  try {
+    await watchlistManager.loadMovies();
+  } catch (error) {
+    authMessage.textContent = error.message;
   }
 
   displayWatchedList();
@@ -319,19 +323,23 @@ function createMovieCard(movie, showAddButton) {
       addButton.style.opacity = "0.7";
     }
 
-    addButton.addEventListener("click", (e) => {
+    addButton.addEventListener("click", async (e) => {
       e.stopPropagation();
 
-      watchlistManager.addMovie(movie);
-      displayWatchedList();
-      updateDashboardStats();
+      try {
+        await watchlistManager.addMovie(movie);
+        displayWatchedList();
+        updateDashboardStats();
 
-      currentMovies = currentMovies.filter((savedMovie) => savedMovie.id !== movie.id);
-      displayCurrentMovies();
+        currentMovies = currentMovies.filter((savedMovie) => savedMovie.id !== movie.id);
+        displayCurrentMovies();
 
-      addButton.textContent = "Already Watched";
-      addButton.disabled = true;
-      addButton.style.opacity = "0.7";
+        addButton.textContent = "Already Watched";
+        addButton.disabled = true;
+        addButton.style.opacity = "0.7";
+      } catch (error) {
+        authMessage.textContent = error.message;
+      }
     });
 
     buttonContainer.appendChild(addButton);
@@ -339,11 +347,15 @@ function createMovieCard(movie, showAddButton) {
     const removeButton = document.createElement("button");
     removeButton.textContent = "Remove";
 
-    removeButton.addEventListener("click", (e) => {
+    removeButton.addEventListener("click", async (e) => {
       e.stopPropagation();
 
-      watchlistManager.removeMovie(movie.id);
-      displayWatchedList();
+      try {
+        await watchlistManager.removeMovie(movie.id);
+        displayWatchedList();
+      } catch (error) {
+        authMessage.textContent = error.message;
+      }
     });
 
     buttonContainer.appendChild(removeButton);
@@ -448,4 +460,9 @@ window.addEventListener("click", (e) => {
 });
 
 // INIT
-syncAccountState();
+async function initializeApp() {
+  await authManager.loadCurrentUser();
+  await syncAccountState();
+}
+
+initializeApp();
